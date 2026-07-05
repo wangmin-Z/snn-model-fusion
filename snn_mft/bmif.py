@@ -24,12 +24,27 @@ class BmIfSpike(torch.autograd.Function):
 
     @staticmethod
     def forward(ctx, membrane: Tensor, threshold: Tensor, alpha: Tensor) -> Tensor:
+        """前向发放整数脉冲。
+
+        参数
+        ----------
+        membrane:
+            当前膜电位张量，形状与上一层输出一致。
+        threshold:
+            发放阈值 V_thr，使用张量是为了适配 autograd.Function 的接口。
+        alpha:
+            替代梯度窗口宽度，前向阶段只保存，反向阶段才使用。
+        """
+
+        # 阈值和窗口宽度需要跟膜电位处在同一设备、同一浮点类型。
         threshold = threshold.to(device=membrane.device, dtype=membrane.dtype)
         alpha = alpha.to(device=membrane.device, dtype=membrane.dtype)
 
+        # BM-IF 允许一次发放多个正脉冲或负脉冲，强度由膜电位跨过多少个阈值决定。
         positive_strength = torch.floor(torch.clamp(membrane / threshold, min=0.0))
         negative_strength = -torch.floor(torch.clamp(-membrane / threshold, min=0.0))
 
+        # 未达到正负阈值时不发放脉冲；达到阈值后保留带符号的脉冲强度。
         spike = torch.where(
             membrane >= threshold,
             positive_strength,
@@ -43,6 +58,7 @@ class BmIfSpike(torch.autograd.Function):
         membrane, threshold, alpha = ctx.saved_tensors
         alpha = torch.clamp(alpha, min=torch.finfo(membrane.dtype).eps)
 
+        # 在正阈值和负阈值附近打开替代梯度窗口，其他位置梯度近似为 0。
         near_positive_threshold = (membrane - threshold).abs() < alpha
         near_negative_threshold = (membrane + threshold).abs() < alpha
         surrogate = (near_positive_threshold | near_negative_threshold).to(membrane.dtype) / alpha
@@ -80,12 +96,24 @@ class BmIfActivation(nn.Module):
         self.mem: Tensor | None = None
 
     def reset_state(self) -> None:
+        """清空跨时间步保存的膜电位。"""
+
         self.mem = None
 
     def forward(self, current: Tensor) -> Tensor:
+        """积分当前输入、发放脉冲并完成膜电位复位。
+
+        参数
+        ----------
+        current:
+            当前时间步输入电流，通常来自卷积层或残差相加后的激活值。
+        """
+
+        # 第一个时间步或输入形状变化时，重新创建同形状膜电位。
         if self.mem is None or self.mem.shape != current.shape or self.mem.device != current.device:
             self.mem = torch.zeros_like(current)
 
+        # 积分 -> 发放 -> 复位，对应论文 BM-IF 神经元的单步更新。
         self.mem = self.mem + current
         signed_spike = bmif_spike(self.mem, threshold=self.threshold, alpha=self.alpha)
         self.mem = self.mem - signed_spike * self.threshold

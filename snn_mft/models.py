@@ -17,10 +17,14 @@ from .bmif import BmIfActivation, reset_spiking_state
 
 
 def conv3x3(in_planes: int, out_planes: int, stride: int = 1) -> nn.Conv2d:
+    """ResNet BasicBlock 使用的 3x3 卷积。"""
+
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride, padding=1, bias=False)
 
 
 def conv1x1(in_planes: int, out_planes: int, stride: int = 1) -> nn.Conv2d:
+    """下采样残差分支使用的 1x1 卷积。"""
+
     return nn.Conv2d(in_planes, out_planes, kernel_size=1, stride=stride, bias=False)
 
 
@@ -112,6 +116,20 @@ class SNNResNet(nn.Module):
         transmit_negative: bool,
         stride: int = 1,
     ) -> nn.Sequential:
+        """堆叠一组 SNN BasicBlock。
+
+        参数
+        ----------
+        planes:
+            当前 stage 的输出通道数。
+        blocks:
+            当前 stage 中 BasicBlock 的数量，例如 ResNet-18 是 [2, 2, 2, 2]。
+        threshold / alpha / transmit_negative:
+            传给 BM-IF 激活层的神经元参数。
+        stride:
+            stage 第一个 block 的步幅，stride=2 时完成空间下采样。
+        """
+
         downsample = None
         if stride != 1 or self.inplanes != planes * SpikingBasicBlock.expansion:
             downsample = nn.Sequential(
@@ -145,6 +163,8 @@ class SNNResNet(nn.Module):
         return nn.Sequential(*layers)
 
     def _forward_single_step(self, x: Tensor) -> Tensor:
+        """执行一个时间步的 ResNet 前向传播。"""
+
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.spike1(x)
@@ -182,7 +202,17 @@ class SNNResNet(nn.Module):
 
 
 def build_ann_resnet(depth: int, num_classes: int, pretrained_imagenet: bool = False) -> nn.Module:
-    """构建 ANN -> SNN 转换前使用的 ANN ResNet。"""
+    """构建 ANN -> SNN 转换前使用的 ANN ResNet。
+
+    参数
+    ----------
+    depth:
+        ResNet 深度，只支持论文中的 18 或 34。
+    num_classes:
+        目标遥感数据集类别数量。
+    pretrained_imagenet:
+        是否使用 torchvision 的 ImageNet 预训练权重初始化主干。
+    """
 
     if depth == 18:
         weights = ResNet18_Weights.DEFAULT if pretrained_imagenet else None
@@ -205,6 +235,11 @@ def build_snn_resnet(
     alpha: float = 1.0,
     transmit_negative: bool = False,
 ) -> SNNResNet:
+    """构建论文中的 S-ResNet18 或 S-ResNet34。
+
+    参数含义与 :class:`SNNResNet` 保持一致。
+    """
+
     if depth == 18:
         layers = [2, 2, 2, 2]
     elif depth == 34:
@@ -222,6 +257,8 @@ def build_snn_resnet(
 
 
 def _clean_state_key(key: str) -> str:
+    """清理 DataParallel 或外层封装常见的 state_dict 前缀。"""
+
     for prefix in ("module.", "model."):
         if key.startswith(prefix):
             key = key[len(prefix) :]

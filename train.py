@@ -28,8 +28,18 @@ from tqdm.auto import tqdm
 from snn_mft.data import make_dataloaders
 from snn_mft.models import build_ann_resnet, build_snn_resnet, copy_matching_state
 
+HISTORY_FIELDNAMES = ["epoch", "lr", "train_loss", "train_acc", "val_loss", "val_acc", "best_val_acc"]
+
 
 def set_seed(seed: int) -> None:
+    """固定 Python、NumPy 和 PyTorch 随机种子。
+
+    参数
+    ----------
+    seed:
+        本次实验的随机种子，影响数据划分、数据增强和模型初始化。
+    """
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -38,7 +48,19 @@ def set_seed(seed: int) -> None:
 
 
 def select_device(requested: str) -> torch.device:
+    """根据用户请求选择训练设备。
+
+    参数
+    ----------
+    requested:
+        可选 auto、cpu、mps、cuda 或 cuda:0 等字符串。
+    """
+
     if requested != "auto":
+        if requested.startswith("cuda") and not torch.cuda.is_available():
+            raise RuntimeError("用户指定了 CUDA，但当前 PyTorch 没有可用 CUDA 设备。")
+        if requested == "mps" and not torch.backends.mps.is_available():
+            raise RuntimeError("用户指定了 MPS，但当前运行环境无法访问 Metal/MPS 设备。")
         return torch.device(requested)
     if torch.cuda.is_available():
         return torch.device("cuda")
@@ -48,6 +70,14 @@ def select_device(requested: str) -> torch.device:
 
 
 def extract_state_dict(checkpoint: Any) -> dict[str, torch.Tensor]:
+    """从不同格式的 checkpoint 中取出模型权重字典。
+
+    参数
+    ----------
+    checkpoint:
+        torch.load 读取出的对象，可能是完整 checkpoint，也可能已经是 state_dict。
+    """
+
     if isinstance(checkpoint, dict):
         for key in ("model_state", "state_dict", "model"):
             if key in checkpoint and isinstance(checkpoint[key], dict):
@@ -58,6 +88,8 @@ def extract_state_dict(checkpoint: Any) -> dict[str, torch.Tensor]:
 
 
 def accuracy(logits: torch.Tensor, target: torch.Tensor) -> float:
+    """计算一个 batch 的 top-1 准确率。"""
+
     prediction = logits.argmax(dim=1)
     return (prediction == target).float().mean().item()
 
@@ -70,9 +102,28 @@ def run_epoch(
     optimizer: torch.optim.Optimizer | None = None,
     show_progress: bool = True,
 ) -> tuple[float, float]:
+    """运行一个训练或验证 epoch。
+
+    参数
+    ----------
+    model:
+        ANN 或 SNN 模型。
+    loader:
+        当前阶段的数据加载器。
+    criterion:
+        损失函数，默认训练脚本中使用交叉熵。
+    device:
+        训练设备。
+    optimizer:
+        传入优化器时表示训练阶段；为 None 时表示验证阶段。
+    show_progress:
+        是否显示 batch 级进度条。
+    """
+
     is_train = optimizer is not None
     model.train(is_train)
 
+    # 用样本数加权累计，避免最后一个 batch 较小时影响均值。
     total_loss = 0.0
     total_correct = 0
     total_samples = 0
@@ -103,6 +154,8 @@ def run_epoch(
 
 
 def build_model(args: argparse.Namespace, num_classes: int) -> nn.Module:
+    """根据命令行参数构建 ANN 或 SNN，并在需要时复制 ANN 权重。"""
+
     if args.model_type == "ann":
         return build_ann_resnet(
             depth=args.depth,
@@ -140,6 +193,24 @@ def save_checkpoint(
     epoch: int,
     val_acc: float,
 ) -> None:
+    """保存训练 checkpoint。
+
+    参数
+    ----------
+    path:
+        checkpoint 文件路径。
+    model:
+        当前模型。
+    args:
+        本次运行的命令行参数。
+    class_names:
+        ImageFolder 类别名称，后续推理时用于还原标签。
+    epoch:
+        当前 epoch。
+    val_acc:
+        当前验证准确率。
+    """
+
     path.parent.mkdir(parents=True, exist_ok=True)
     torch.save(
         {
@@ -154,6 +225,8 @@ def save_checkpoint(
 
 
 def parse_args() -> argparse.Namespace:
+    """解析训练脚本命令行参数。"""
+
     parser = argparse.ArgumentParser(description="MFT SNN 复现训练脚本")
     parser.add_argument("--data-root", required=True, help="ImageFolder 数据集路径")
     parser.add_argument("--output-dir", default="outputs/snn_mft_runs", help="checkpoint 保存目录")
@@ -183,6 +256,8 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    """训练入口：准备数据、模型、优化器，并记录每轮指标。"""
+
     args = parse_args()
     set_seed(args.seed)
     device = select_device(args.device)
@@ -214,10 +289,7 @@ def main() -> None:
     (output_dir / "args.json").write_text(json.dumps(vars(args), ensure_ascii=False, indent=2), encoding="utf-8")
     history_path = output_dir / "history.csv"
     with history_path.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(
-            file,
-            fieldnames=["epoch", "lr", "train_loss", "train_acc", "val_loss", "val_acc", "best_val_acc"],
-        )
+        writer = csv.DictWriter(file, fieldnames=HISTORY_FIELDNAMES)
         writer.writeheader()
     print(f"输出目录: {output_dir}")
 
@@ -266,10 +338,7 @@ def main() -> None:
             val_acc,
         )
         with history_path.open("a", newline="", encoding="utf-8") as file:
-            writer = csv.DictWriter(
-                file,
-                fieldnames=["epoch", "lr", "train_loss", "train_acc", "val_loss", "val_acc", "best_val_acc"],
-            )
+            writer = csv.DictWriter(file, fieldnames=HISTORY_FIELDNAMES)
             writer.writerow(
                 {
                     "epoch": epoch,
