@@ -26,12 +26,21 @@
 | RSSCN7 ANN ResNet-18 | `outputs/paper_full_120_20260704/rsscn7_80_ann_resnet18_img224_e120_seed42` | 88 | 75.36% | 71.96% |
 | RSSCN7 SNN-MFT ResNet-18, `T=4` | `outputs/paper_full_120_20260704/rsscn7_80_snn_mft_resnet18_T4_img224_e120_seed42` | 95 | 72.50% | 70.36% |
 
+## 进行中/暂停实验
+
+| 实验 | 输出目录 | 已完成轮数 | 当前最佳轮数 | 当前最佳验证准确率 | 暂停位置 |
+| --- | --- | ---: | ---: | ---: | --- |
+| UCM SNN-MFT ResNet-18, `T=8` | `outputs/paper_full_120_20260706/ucm80_snn_mft_resnet18_T8_img224_e120_seed42` | 69 | 36 | 48.33% | 第 70 轮训练过程中手动暂停 |
+
+进行中实验用于后续恢复训练，不计入上面的完整 120 轮结果。
+
 ## Checkpoint
 
 - ANN 最佳模型: `outputs/paper_full_120_20260704/ucm80_ann_resnet18_img224_e120_seed42/best_ann_resnet18.pt`
 - UCM SNN `T=2` 最佳模型: `outputs/paper_full_120_20260705/ucm80_snn_mft_resnet18_T2_img224_e120_seed42/best_snn_resnet18.pt`
 - SNN 最佳模型: `outputs/paper_full_120_20260704/ucm80_snn_mft_resnet18_T4_img224_e120_seed42/best_snn_resnet18.pt`
 - UCM SNN `T=6` 最佳模型: `outputs/paper_full_120_20260705/ucm80_snn_mft_resnet18_T6_img224_e120_seed42/best_snn_resnet18.pt`
+- UCM SNN `T=8` 暂停模型: `outputs/paper_full_120_20260706/ucm80_snn_mft_resnet18_T8_img224_e120_seed42/latest_snn_resnet18.pt`
 - RSSCN7 ANN 最佳模型: `outputs/paper_full_120_20260704/rsscn7_80_ann_resnet18_img224_e120_seed42/best_ann_resnet18.pt`
 - RSSCN7 SNN 最佳模型: `outputs/paper_full_120_20260704/rsscn7_80_snn_mft_resnet18_T4_img224_e120_seed42/best_snn_resnet18.pt`
 
