@@ -22,6 +22,7 @@
 | UCM ANN ResNet-18 | `outputs/paper_full_120_20260704/ucm80_ann_resnet18_img224_e120_seed42` | 89 | 66.67% | 64.76% |
 | UCM SNN-MFT ResNet-18, `T=2` | `outputs/paper_full_120_20260705/ucm80_snn_mft_resnet18_T2_img224_e120_seed42` | 87 | 46.90% | 43.57% |
 | UCM SNN-MFT ResNet-18, `T=4` | `outputs/paper_full_120_20260704/ucm80_snn_mft_resnet18_T4_img224_e120_seed42` | 44 | 56.43% | 54.05% |
+| UCM SNN-MFT ResNet-18, `T=6` | `outputs/paper_full_120_20260705/ucm80_snn_mft_resnet18_T6_img224_e120_seed42` | 101 | 52.86% | 45.95% |
 | RSSCN7 ANN ResNet-18 | `outputs/paper_full_120_20260704/rsscn7_80_ann_resnet18_img224_e120_seed42` | 88 | 75.36% | 71.96% |
 | RSSCN7 SNN-MFT ResNet-18, `T=4` | `outputs/paper_full_120_20260704/rsscn7_80_snn_mft_resnet18_T4_img224_e120_seed42` | 95 | 72.50% | 70.36% |
 
@@ -30,6 +31,7 @@
 - ANN 最佳模型: `outputs/paper_full_120_20260704/ucm80_ann_resnet18_img224_e120_seed42/best_ann_resnet18.pt`
 - UCM SNN `T=2` 最佳模型: `outputs/paper_full_120_20260705/ucm80_snn_mft_resnet18_T2_img224_e120_seed42/best_snn_resnet18.pt`
 - SNN 最佳模型: `outputs/paper_full_120_20260704/ucm80_snn_mft_resnet18_T4_img224_e120_seed42/best_snn_resnet18.pt`
+- UCM SNN `T=6` 最佳模型: `outputs/paper_full_120_20260705/ucm80_snn_mft_resnet18_T6_img224_e120_seed42/best_snn_resnet18.pt`
 - RSSCN7 ANN 最佳模型: `outputs/paper_full_120_20260704/rsscn7_80_ann_resnet18_img224_e120_seed42/best_ann_resnet18.pt`
 - RSSCN7 SNN 最佳模型: `outputs/paper_full_120_20260704/rsscn7_80_snn_mft_resnet18_T4_img224_e120_seed42/best_snn_resnet18.pt`
 

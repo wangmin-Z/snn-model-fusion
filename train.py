@@ -180,6 +180,8 @@ def build_model(args: argparse.Namespace, num_classes: int) -> nn.Module:
         )
         print(f"已从 ANN checkpoint 复制 {len(copied)} 个张量。")
         print(f"跳过 {len(skipped)} 个张量。是否复制分类器: {args.copy_classifier}")
+    elif args.resume_checkpoint:
+        print("已提供 resume checkpoint，稍后将加载 SNN 断点权重。")
     else:
         print("没有提供 ANN checkpoint，SNN 将从随机权重开始训练。")
     return model
@@ -192,6 +194,9 @@ def save_checkpoint(
     class_names: list[str],
     epoch: int,
     val_acc: float,
+    best_acc: float,
+    optimizer: torch.optim.Optimizer | None = None,
+    scheduler: StepLR | None = None,
 ) -> None:
     """保存训练 checkpoint。
 
@@ -209,19 +214,69 @@ def save_checkpoint(
         当前 epoch。
     val_acc:
         当前验证准确率。
+    best_acc:
+        截止当前 epoch 的最佳验证准确率。
+    optimizer:
+        可选优化器状态，用于断点续训。
+    scheduler:
+        可选学习率调度器状态，用于断点续训。
     """
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save(
-        {
-            "model_state": model.state_dict(),
-            "args": vars(args),
-            "class_names": class_names,
-            "epoch": epoch,
-            "val_acc": val_acc,
-        },
-        path,
-    )
+    checkpoint = {
+        "model_state": model.state_dict(),
+        "args": vars(args),
+        "class_names": class_names,
+        "epoch": epoch,
+        "val_acc": val_acc,
+        "best_val_acc": best_acc,
+    }
+    if optimizer is not None:
+        checkpoint["optimizer_state"] = optimizer.state_dict()
+    if scheduler is not None:
+        checkpoint["scheduler_state"] = scheduler.state_dict()
+    torch.save(checkpoint, path)
+
+
+def read_history_summary(path: Path) -> tuple[int, float]:
+    """读取 history.csv 的最后 epoch 和历史最佳准确率。"""
+
+    if not path.exists():
+        return 0, 0.0
+
+    last_epoch = 0
+    best_acc = 0.0
+    with path.open("r", newline="", encoding="utf-8") as file:
+        reader = csv.DictReader(file)
+        for row in reader:
+            last_epoch = int(row["epoch"])
+            best_acc = max(best_acc, float(row.get("best_val_acc") or row["val_acc"]))
+    return last_epoch, best_acc
+
+
+def move_optimizer_state_to_device(optimizer: torch.optim.Optimizer, device: torch.device) -> None:
+    """把 optimizer 内部动量等 tensor 状态移动到当前训练设备。"""
+
+    for state in optimizer.state.values():
+        for key, value in state.items():
+            if isinstance(value, torch.Tensor):
+                state[key] = value.to(device)
+
+
+def align_step_lr(
+    optimizer: torch.optim.Optimizer,
+    scheduler: StepLR,
+    completed_epochs: int,
+    step_size: int,
+    gamma: float,
+) -> None:
+    """旧 checkpoint 没有 scheduler 状态时，按已完成 epoch 对齐 StepLR。"""
+
+    factor = gamma ** (completed_epochs // step_size)
+    for param_group, base_lr in zip(optimizer.param_groups, scheduler.base_lrs):
+        param_group["lr"] = base_lr * factor
+    scheduler.last_epoch = completed_epochs
+    scheduler._last_lr = [param_group["lr"] for param_group in optimizer.param_groups]
 
 
 def parse_args() -> argparse.Namespace:
@@ -237,6 +292,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--threshold", type=float, default=1.0, help="BM-IF 阈值 V_thr")
     parser.add_argument("--alpha", type=float, default=1.0, help="替代梯度窗口宽度")
     parser.add_argument("--ann-checkpoint", default="", help="用于 ANN -> SNN 权重复制的 ANN checkpoint")
+    parser.add_argument("--resume-checkpoint", default="", help="从 checkpoint 断点续训")
     parser.add_argument("--copy-classifier", action="store_true", help="形状匹配时复制 fc.* 分类器参数")
     parser.add_argument("--pretrained-imagenet", action="store_true", help="ANN 使用 torchvision ImageNet 预训练权重")
     parser.add_argument("--image-size", type=int, default=224)
@@ -288,13 +344,34 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "args.json").write_text(json.dumps(vars(args), ensure_ascii=False, indent=2), encoding="utf-8")
     history_path = output_dir / "history.csv"
-    with history_path.open("w", newline="", encoding="utf-8") as file:
-        writer = csv.DictWriter(file, fieldnames=HISTORY_FIELDNAMES)
-        writer.writeheader()
+    if not args.resume_checkpoint or not history_path.exists():
+        with history_path.open("w", newline="", encoding="utf-8") as file:
+            writer = csv.DictWriter(file, fieldnames=HISTORY_FIELDNAMES)
+            writer.writeheader()
     print(f"输出目录: {output_dir}")
 
+    start_epoch = 1
     best_acc = 0.0
-    for epoch in range(1, args.epochs + 1):
+    if args.resume_checkpoint:
+        checkpoint = torch.load(args.resume_checkpoint, map_location="cpu")
+        model.load_state_dict(extract_state_dict(checkpoint), strict=True)
+        checkpoint_epoch = int(checkpoint.get("epoch", 0))
+        start_epoch = checkpoint_epoch + 1
+        best_acc = float(checkpoint.get("best_val_acc", checkpoint.get("val_acc", 0.0)))
+        if isinstance(checkpoint, dict) and "optimizer_state" in checkpoint:
+            optimizer.load_state_dict(checkpoint["optimizer_state"])
+            move_optimizer_state_to_device(optimizer, device)
+        if isinstance(checkpoint, dict) and "scheduler_state" in checkpoint:
+            scheduler.load_state_dict(checkpoint["scheduler_state"])
+        else:
+            align_step_lr(optimizer, scheduler, checkpoint_epoch, args.scheduler_step, args.scheduler_gamma)
+        history_last_epoch, history_best_acc = read_history_summary(history_path)
+        if history_last_epoch:
+            start_epoch = max(start_epoch, history_last_epoch + 1)
+            best_acc = max(best_acc, history_best_acc)
+        print(f"从 checkpoint 续训: start_epoch={start_epoch}, best_val_acc={best_acc:.4f}")
+
+    for epoch in range(start_epoch, args.epochs + 1):
         print(f"\n第 {epoch}/{args.epochs} 轮")
         current_lr = optimizer.param_groups[0]["lr"]
         train_loss, train_acc = run_epoch(
@@ -327,6 +404,9 @@ def main() -> None:
                 class_names,
                 epoch,
                 val_acc,
+                best_acc,
+                optimizer,
+                scheduler,
             )
             print(f"已保存最佳 checkpoint: val_acc={best_acc:.4f}")
         save_checkpoint(
@@ -336,6 +416,9 @@ def main() -> None:
             class_names,
             epoch,
             val_acc,
+            best_acc,
+            optimizer,
+            scheduler,
         )
         with history_path.open("a", newline="", encoding="utf-8") as file:
             writer = csv.DictWriter(file, fieldnames=HISTORY_FIELDNAMES)
