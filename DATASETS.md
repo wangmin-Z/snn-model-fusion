@@ -44,29 +44,29 @@
   --batch-size 16
 ```
 
-## 未自动下载
-
 ### AID
 
-AID 官方页面可以访问，但官方下载入口是 OneDrive 和 BaiduPan：
+AID 已下载并解压完成。官方页面提供 OneDrive 和 BaiduPan 下载入口：
 
 - 官方页面：`https://captain-whu.github.io/AID/`
 - OneDrive：`https://1drv.ms/u/s!AthY3vMZmuxChNR0Co7QHpJ56M-SvQ`
 - BaiduPan：`https://pan.baidu.com/s/1mifOBv6`
+- 本次使用的公开镜像：`https://www.kaggle.com/datasets/jiayuanchengala/aid-scene-classification-datasets`
+- 原始压缩包：`data/raw/AID_scene_classification.zip`
+- 训练路径：`data/processed/AID`
+- 压缩包 MD5：`d0e4f31114c7b5c377d629a0016c5470`
+- 压缩包 SHA-256：`efd8dfb3ef38b7306f5d94c59d26e55d1cea77096c6a8d79cd8bb14db333aa88`
+- 校验结果：30 个类别、10,000 张图片、0 个损坏文件
 
-脚本下载尝试结果：
+数据集体积较大，不上传到 GitHub 仓库。需要重新准备环境时，请从上面的官方入口或公开镜像下载，并使用 MD5 或 SHA-256 校验压缩包。
+
+官方下载尝试记录：
 
 - OneDrive `?download=1` 返回 `403 Forbidden`。
 - OneDrive 分享 API 返回 `404 Not Found`。
 - OneDrive 跳转诊断在 `onedrive.live.com` 上超时。
 
-因此 AID 需要用浏览器或 BaiduPan 客户端手动下载，然后解压到：
-
-```text
-data/processed/AID/
-```
-
-解压后应保持 `ImageFolder` 结构：
+数据已保持为 PyTorch `ImageFolder` 结构：
 
 ```text
 data/processed/AID/
