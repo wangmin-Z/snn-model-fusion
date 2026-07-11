@@ -5,6 +5,6 @@
 - `history.csv`：每轮学习率、训练损失、训练准确率、验证损失、验证准确率和历史最佳准确率。
 - `args.json`：最后一次启动或断点恢复时使用的命令行参数。
 
-模型 checkpoint 和数据集不写入 Git 历史。数据来源、保存路径及校验信息见 `DATASETS.md`。
+模型 checkpoint 和数据集不写入 Git 历史。数据来源、保存路径及校验信息见 [`docs/datasets.md`](../docs/datasets.md)。
 
-汇总指标见仓库根目录的 `RESULTS.md`。仍在运行或未完成 120 轮的实验不会放入 `completed/`。
+汇总指标见 [`docs/results.md`](../docs/results.md)。仍在运行或未完成 120 轮的实验不会放入 `completed/`。
