@@ -44,29 +44,41 @@
   --batch-size 16
 ```
 
-## 未自动下载
-
 ### AID
 
-AID 官方页面可以访问，但官方下载入口是 OneDrive 和 BaiduPan：
+AID 已下载并解压完成。官方页面提供 OneDrive 和 BaiduPan 下载入口：
 
 - 官方页面：`https://captain-whu.github.io/AID/`
 - OneDrive：`https://1drv.ms/u/s!AthY3vMZmuxChNR0Co7QHpJ56M-SvQ`
 - BaiduPan：`https://pan.baidu.com/s/1mifOBv6`
+- 本次使用的公开镜像：`https://www.kaggle.com/datasets/jiayuanchengala/aid-scene-classification-datasets`
+- 原始压缩包：`data/raw/AID_scene_classification.zip`
+- 训练路径：`data/processed/AID`
+- 压缩包 MD5：`d0e4f31114c7b5c377d629a0016c5470`
+- 压缩包 SHA-256：`efd8dfb3ef38b7306f5d94c59d26e55d1cea77096c6a8d79cd8bb14db333aa88`
+- 校验结果：30 个类别、10,000 张图片、0 个损坏文件
 
-脚本下载尝试结果：
+完整压缩包也发布在仓库的 `aid-dataset-v1` Release 中。由于 GitHub 限制单个大文件的体积，压缩包被拆为两个附件。下载两个分片后执行：
+
+```bash
+cat AID_scene_classification.zip.part-00 \
+    AID_scene_classification.zip.part-01 \
+    > AID_scene_classification.zip
+shasum -a 256 AID_scene_classification.zip
+unzip AID_scene_classification.zip -d data/processed
+```
+
+重组后的 SHA-256 必须与上面的压缩包 SHA-256 一致。Release 地址：
+
+`https://github.com/wangmin-Z/snn-model-fusion/releases/tag/aid-dataset-v1`
+
+官方下载尝试记录：
 
 - OneDrive `?download=1` 返回 `403 Forbidden`。
 - OneDrive 分享 API 返回 `404 Not Found`。
 - OneDrive 跳转诊断在 `onedrive.live.com` 上超时。
 
-因此 AID 需要用浏览器或 BaiduPan 客户端手动下载，然后解压到：
-
-```text
-data/processed/AID/
-```
-
-解压后应保持 `ImageFolder` 结构：
+数据已保持为 PyTorch `ImageFolder` 结构：
 
 ```text
 data/processed/AID/
