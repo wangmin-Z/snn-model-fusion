@@ -1,7 +1,13 @@
 __pycache__/
 *.py[cod]
+.venv/
 .DS_Store
+.idea/
+.vscode/
 .cache/
 .mplconfig/
 outputs/
 data/
+*.pt
+*.pth
+*.ckpt
