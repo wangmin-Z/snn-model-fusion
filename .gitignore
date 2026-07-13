@@ -6,8 +6,10 @@ __pycache__/
 .vscode/
 .cache/
 .mplconfig/
-outputs/
-data/
+outputs/*
+!outputs/README.md
+data/*
+!data/README.md
 *.pt
 *.pth
 *.ckpt
