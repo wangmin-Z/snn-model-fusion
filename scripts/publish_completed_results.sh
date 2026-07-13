@@ -66,7 +66,9 @@ publish_if_complete() {
   run_name="$(basename "${source_run}")"
 
   [[ -f "${source_run}/history.csv" ]] || return 0
-  [[ -d "results/completed/${run_name}" ]] && return 0
+  if git ls-files --error-unmatch "results/completed/${run_name}/history.csv" >/dev/null 2>&1; then
+    return 0
+  fi
 
   local last_epoch
   last_epoch="$(tail -n 1 "${source_run}/history.csv" | cut -d, -f1)"

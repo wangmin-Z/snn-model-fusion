@@ -45,10 +45,10 @@ def read_metrics(history_path: Path, expected_epochs: int) -> Metrics:
     )
 
 
-def insert_table_row(path: Path, header: str, row: str, duplicate: str) -> None:
+def insert_table_row(path: Path, header: str, row: str, duplicate: str) -> bool:
     text = path.read_text(encoding="utf-8")
     if duplicate in text:
-        raise ValueError(f"结果索引已包含: {duplicate}")
+        return False
 
     lines = text.splitlines(keepends=True)
     try:
@@ -61,6 +61,7 @@ def insert_table_row(path: Path, header: str, row: str, duplicate: str) -> None:
         insert_index += 1
     lines.insert(insert_index, row + "\n")
     path.write_text("".join(lines), encoding="utf-8")
+    return True
 
 
 def build_readme(args: argparse.Namespace, metrics: Metrics) -> str:
@@ -114,16 +115,16 @@ def main() -> None:
     )
 
     destination = COMPLETED_ROOT / run_name
-    if destination.exists():
-        raise FileExistsError(f"归档目录已存在，拒绝覆盖: {destination}")
 
     if args.dry_run:
         print("dry-run: 训练已完成，归档前置校验通过。")
         return
 
-    destination.mkdir()
+    destination.mkdir(exist_ok=True)
     shutil.copy2(args_path, destination / "args.json")
-    shutil.copy2(history_path, destination / "history.csv")
+    # 训练日志来自 macOS 时常含 CRLF；统一为 LF，确保 git diff --check 通过。
+    history_text = history_path.read_text(encoding="utf-8").replace("\r\n", "\n")
+    (destination / "history.csv").write_text(history_text, encoding="utf-8")
     (destination / "README.md").write_text(build_readme(args, metrics), encoding="utf-8")
 
     time_steps = str(args.time_steps) if args.time_steps else "-"
