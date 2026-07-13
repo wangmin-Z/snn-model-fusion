@@ -10,6 +10,7 @@
 - [已完成实验与指标](docs/results.md)
 - [逐轮训练记录](results/README.md)
 - [推荐实验队列](scripts/run_recommended_experiments.sh)
+- [贡献与提交规范](CONTRIBUTING.md)
 
 ## 方法流程
 
@@ -35,17 +36,21 @@ membrane = membrane - spike * V_thr
 
 ```text
 snn-model-fusion/
-├── snn_mft/                         # BM-IF、数据加载和 S-ResNet 实现
-├── scripts/                         # 可恢复的长时间实验队列
-├── tests/                           # 快速前向与反向测试
+├── .github/                         # GitHub Actions 和 PR 模板
+├── data/                            # 本地数据放置约定，不跟踪数据本体
 ├── docs/                            # 数据集说明和实验汇总
-├── results/completed/               # 已完成实验的参数与逐轮 CSV
+├── outputs/                         # 本地训练输出约定，不跟踪权重
+├── results/completed/               # 已完成实验的参数、指标和任务说明
+├── scripts/                         # 可恢复的长时间实验队列
+├── snn_mft/                         # BM-IF、数据加载和 S-ResNet 实现
+├── tests/                           # 快速前向与反向测试
 ├── train.py                         # ANN 与 SNN 统一训练入口
 ├── demo_bmif.py                     # BM-IF 单神经元演示
+├── CONTRIBUTING.md                  # 开发、测试与提交规范
 └── requirements.txt                 # Python 依赖
 ```
 
-数据集、模型权重、checkpoint 和完整 `outputs/` 不写入 Git 历史。
+每个功能目录都有独立的 `README.md`，说明该目录完成的任务、文件边界和使用方法。数据集、模型权重、checkpoint 和完整 `outputs/` 不写入 Git 历史。
 
 ## 环境安装
 
