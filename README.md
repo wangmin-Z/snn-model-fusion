@@ -10,6 +10,7 @@
 - [已完成实验与指标](docs/results.md)
 - [逐轮训练记录](results/README.md)
 - [推荐实验队列](scripts/run_recommended_experiments.sh)
+- [AI 协作规则](AGENTS.md)
 - [贡献与提交规范](CONTRIBUTING.md)
 
 ## 方法流程
@@ -46,6 +47,9 @@ snn-model-fusion/
 ├── tests/                           # 快速前向与反向测试
 ├── train.py                         # ANN 与 SNN 统一训练入口
 ├── demo_bmif.py                     # BM-IF 单神经元演示
+├── AGENTS.md                       # Codex、Claude 等 AI 的统一协作规则
+├── CLAUDE.md                       # Claude 的规则入口
+├── GEMINI.md                       # Gemini 的规则入口
 ├── CONTRIBUTING.md                  # 开发、测试与提交规范
 └── requirements.txt                 # Python 依赖
 ```

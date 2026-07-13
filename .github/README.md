@@ -4,6 +4,7 @@
 
 | 文件或目录 | 任务 |
 | --- | --- |
+| `copilot-instructions.md` | 引导 GitHub Copilot 读取根目录 `AGENTS.md` 统一规则。 |
 | `pull_request_template.md` | 统一 PR 的变更、验证和数据边界说明。 |
 | `workflows/` | 在 GitHub Actions 中执行冒烟测试和脚本检查。 |
 
