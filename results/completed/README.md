@@ -13,5 +13,6 @@
 | UCMerced | SNN-MFT ResNet-18 | 8 | 118 | 49.05% | [`ucm80_snn_mft_resnet18_T8_img224_e120_seed42/`](ucm80_snn_mft_resnet18_T8_img224_e120_seed42/) |
 | RSSCN7 | SNN-MFT ResNet-18 | 2 | 102 | 73.57% | [`rsscn7_80_snn_mft_resnet18_T2_img224_e120_seed42/`](rsscn7_80_snn_mft_resnet18_T2_img224_e120_seed42/) |
 | RSSCN7 | SNN-MFT ResNet-18 | 6 | 68 | 75.00% | [`rsscn7_80_snn_mft_resnet18_T6_img224_e120_seed42/`](rsscn7_80_snn_mft_resnet18_T6_img224_e120_seed42/) |
+| RSSCN7 | SNN-MFT ResNet-18 | 8 | 45 | 76.61% | [`rsscn7_80_snn_mft_resnet18_T8_img224_e120_seed42/`](rsscn7_80_snn_mft_resnet18_T8_img224_e120_seed42/) |
 
 这里只保留可审查的配置和逐轮指标，不保留数据集或 checkpoint。
