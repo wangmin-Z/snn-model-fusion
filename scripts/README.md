@@ -25,3 +25,29 @@
 ```
 
 该脚本用于单机 MPS 长时间训练，不由 GitHub Actions 执行正式实验。
+
+## `archive_completed_experiment.py`
+
+该脚本只归档最后一轮达到 120 轮的实验。它会复制轻量的 `args.json` 和 `history.csv`，生成实验说明，并同步 `results/completed/README.md` 与 `docs/results.md`；数据集、checkpoint 和完整 `outputs/` 不会被归档。
+
+示例：
+
+```bash
+python scripts/archive_completed_experiment.py \
+  --source-run /path/to/outputs/rsscn7_80_snn_mft_resnet18_T2_img224_e120_seed42 \
+  --dataset RSSCN7 \
+  --model SNN-MFT-ResNet-18 \
+  --time-steps 2 \
+  --output-path outputs/paper_recommended_20260711/rsscn7_80_snn_mft_resnet18_T2_img224_e120_seed42
+```
+
+## `publish_completed_results.sh`
+
+该监控脚本用于训练期间持续发布完成实验。每 5 分钟检查推荐队列；某组实验的 `history.csv` 到达第 120 轮后，脚本才会归档结果、更新索引，并只提交 `results/completed/<run>/`、`results/completed/README.md` 与 `docs/results.md`。
+
+```bash
+./scripts/publish_completed_results.sh \
+  --source-root /path/to/training/snn-model-fusion
+```
+
+使用 `--once` 可只检查一次。该脚本必须从专用发布分支运行，不能在正在训练的工作目录中运行。

@@ -26,6 +26,9 @@
 | UCM SNN-MFT ResNet-18, `T=8` | `outputs/paper_full_120_20260706/ucm80_snn_mft_resnet18_T8_img224_e120_seed42` | 118 | 49.05% | 46.19% |
 | RSSCN7 ANN ResNet-18 | `outputs/paper_full_120_20260704/rsscn7_80_ann_resnet18_img224_e120_seed42` | 88 | 75.36% | 71.96% |
 | RSSCN7 SNN-MFT ResNet-18, `T=4` | `outputs/paper_full_120_20260704/rsscn7_80_snn_mft_resnet18_T4_img224_e120_seed42` | 95 | 72.50% | 70.36% |
+| RSSCN7 SNN-MFT ResNet-18, `T=2` | `outputs/paper_recommended_20260711/rsscn7_80_snn_mft_resnet18_T2_img224_e120_seed42` | 102 | 73.57% | 69.82% |
+| RSSCN7 SNN-MFT ResNet-18, `T=6` | `outputs/paper_recommended_20260711/rsscn7_80_snn_mft_resnet18_T6_img224_e120_seed42` | 68 | 75.00% | 71.43% |
+| RSSCN7 SNN-MFT ResNet-18, `T=8` | `outputs/paper_recommended_20260711/rsscn7_80_snn_mft_resnet18_T8_img224_e120_seed42` | 45 | 76.61% | 76.43% |
 
 推荐实验队列由 `scripts/run_recommended_experiments.sh` 管理。仍在训练的实验不计入上面的完整 120 轮结果。
 
